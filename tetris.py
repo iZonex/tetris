@@ -207,6 +207,47 @@ class Game:
         self._round = 0
         self._score = 0
         self._iterations = 0
+        self._auto_drop_threshold = 12  # Initial threshold for auto dropping pieces
+
+    def adjust_speed(self):
+        """ Adjust game speed based on rounds. """
+        if self._round % 5 == 0 and self._auto_drop_threshold > 5:
+            self._auto_drop_threshold -= 1  # Decrease the threshold to make the game faster
+
+    def next_round(self, board):
+        self._figure = self._next_figure
+        self._next_figure = GameElement.generate_figure(self.start_y, self.start_x)
+        self._board.update_board(board)
+        lines_removed = self._board.check_matches()
+        self.increment_score(lines_removed * self._board.width)
+        self._round += 1
+        self.adjust_speed()  # Adjust speed at the end of each round
+
+    def start_game(self):
+        board = self._board.generate_board()
+        auto_drop = 0
+        prev_board = board
+        while self._game_running:
+            event = self._window.getch()
+            auto_drop += 1
+            self._get_keyboard_input(event)
+            contact_detected = self.check_intersection(self._board, self._figure)
+            board = self._board.merge_map(self._figure)
+            if board != prev_board:
+                self._render.draw_board(board)
+                self._render.draw_next_element(self._next_figure)
+                self._render.draw_score(self._score, self._round)
+            if auto_drop == self._auto_drop_threshold:
+                auto_drop = 0
+                self._iterations += 1
+                if not contact_detected and self._figure.pos_y + self._figure.height() <= self._board.height - 1:
+                    self.next_iteration()
+                elif contact_detected and self._figure.pos_y in [0, 1, 2]:
+                    self.game_over()
+                else:
+                    self.next_round(board)
+                    self.increment_score(1)
+
 
     def increment_score(self, value=1):
         self._score += value
@@ -280,44 +321,8 @@ class Game:
         self._game_end = True
         self._render.draw_game_over(self._score)
 
-    def next_round(self, board):
-        self._figure = self._next_figure
-        self._next_figure = GameElement.generate_figure(self.start_y, self.start_x)
-        self._board.update_board(board)
-        lines_removed = self._board.check_matches()
-        self.increment_score(lines_removed * self._board.width)
-        self._round += 1
-
     def next_iteration(self):
         self._figure.set_down()
-
-    def start_game(self):
-        board = self._board.generate_board()
-        auto_drop = 0
-        prev_board = board
-        auto_drop_threshold = 12
-        while self._game_running:
-            event = self._window.getch()
-            auto_drop += 1
-            self._get_keyboard_input(event)
-            contact_detected = self.check_intersection(self._board, self._figure)
-            board = self._board.merge_map(self._figure)
-            if board != prev_board:
-                self._render.draw_board(board)
-                self._render.draw_next_element(self._next_figure)
-                self._render.draw_score(self._score, self._round)
-            if auto_drop == auto_drop_threshold:
-                auto_drop = 0
-                self._iterations += 1
-                if not contact_detected and self._figure.pos_y + self._figure.height() <= self._board.height - 1:
-                    self.next_iteration()
-                elif contact_detected and self._figure.pos_y in [0, 1, 2]:
-                    self.game_over()
-                else:
-                    self.next_round(board)
-                    self.increment_score(1)
-            if (self._round % 5 == 0) and auto_drop_threshold >= 5:
-                auto_drop_threshold -= 1
 
     def run(self):
         while not self._game_end:

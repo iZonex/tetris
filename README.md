@@ -1,6 +1,8 @@
 
 # Tetris Clone in Curses
 
+<img width="577" alt="Screenshot 2024-05-13 at 20 11 45" src="https://github.com/iZonex/tetris/assets/2759749/5817550d-a709-4f79-aab5-3912fee84f56">
+
 This is a simple clone of the classic Tetris game implemented in Python using the `curses` library. It runs in the terminal and features classic Tetris gameplay with increasing difficulty as the game progresses.
 
 ## Game Description
